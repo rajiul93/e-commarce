@@ -1,5 +1,5 @@
 import type { AuthResult } from '@/types';
-import { API_URL } from '@/lib/api';
+import { apiUrl } from '@/lib/api-base';
 import { useAuthStore } from '@/stores/auth-store';
 
 let refreshInFlight: Promise<boolean> | null = null;
@@ -9,7 +9,7 @@ export async function refreshSession(): Promise<boolean> {
 
   refreshInFlight = (async () => {
     try {
-      const res = await fetch(`${API_URL}/api/v1/user/refresh`, {
+      const res = await fetch(apiUrl('/api/v1/user/refresh'), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -30,7 +30,7 @@ export async function refreshSession(): Promise<boolean> {
 
 export async function logoutSession(): Promise<void> {
   try {
-    await fetch(`${API_URL}/api/v1/user/logout`, {
+    await fetch(apiUrl('/api/v1/user/logout'), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

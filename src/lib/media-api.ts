@@ -1,5 +1,6 @@
 import type { ApiResponse } from '@/types';
-import { API_URL, ApiError } from '@/lib/api';
+import { apiUrl } from '@/lib/api-base';
+import { ApiError } from '@/lib/api';
 
 export type MediaImage = {
   _id: string;
@@ -31,7 +32,7 @@ export async function uploadMedia(
   formData.append('useCase', options?.useCase ?? 'PRODUCT');
   if (options?.alt) formData.append('alt', options.alt);
 
-  const res = await fetch(`${API_URL}/api/v1/media`, {
+  const res = await fetch(apiUrl('/api/v1/media'), {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -53,7 +54,7 @@ export async function updateMedia(
   formData.append('useCase', options?.useCase ?? 'PRODUCT');
   if (options?.alt) formData.append('alt', options.alt);
 
-  const res = await fetch(`${API_URL}/api/v1/media/${mediaId}`, {
+  const res = await fetch(apiUrl(`/api/v1/media/${mediaId}`), {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -64,7 +65,7 @@ export async function updateMedia(
 }
 
 export async function deleteMedia(mediaId: string, token: string): Promise<void> {
-  const res = await fetch(`${API_URL}/api/v1/media/${mediaId}`, {
+  const res = await fetch(apiUrl(`/api/v1/media/${mediaId}`), {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
     credentials: 'include',

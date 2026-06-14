@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import type { ApiResponse } from '@/types';
+import { getApiBaseUrl } from '@/lib/api-base';
 import { logoutSession, refreshSession, shouldAttemptRefresh } from '@/lib/auth-session';
 import { getAuthToken } from '@/stores/auth-store';
 
@@ -15,7 +16,7 @@ export class ApiError extends Error {
 type RetryConfig = InternalAxiosRequestConfig & { _retried?: boolean };
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001',
+  baseURL: getApiBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });

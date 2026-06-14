@@ -1,8 +1,9 @@
 import type { ApiResponse } from '@/types';
+import { apiUrl, getApiBaseUrl } from '@/lib/api-base';
 import { logoutSession, refreshSession, shouldAttemptRefresh } from '@/lib/auth-session';
 import { getAuthToken } from '@/stores/auth-store';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = getApiBaseUrl();
 
 export class ApiError extends Error {
   status: number;
@@ -20,7 +21,7 @@ type FetchOptions = RequestInit & {
 };
 
 function buildUrl(path: string, params?: FetchOptions['params']) {
-  const url = new URL(`${API_URL}${path}`);
+  const url = new URL(apiUrl(path));
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== '') {
