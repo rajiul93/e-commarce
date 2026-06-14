@@ -1,0 +1,37 @@
+'use client';
+
+import Link from 'next/link';
+import type { Category } from '@/types';
+
+export function CategoryImageGrid({ categories }: { categories: Category[] }) {
+  const withImage = categories.filter((c) => c.image?.url);
+  if (!withImage.length) return null;
+
+  return (
+    <section className="space-y-5">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Browse</p>
+        <h2 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">Shop by category</h2>
+      </div>
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+        {withImage.map((cat) => (
+          <Link
+            key={cat._id}
+            href={`/products?category=${cat._id}`}
+            className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-950/5 transition hover:-translate-y-0.5 hover:shadow-md"
+            title={cat.categoryName}
+          >
+            <div className="aspect-square overflow-hidden bg-zinc-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={cat.image!.url}
+                alt={cat.categoryName}
+                className="h-full w-full object-cover transition group-hover:scale-105"
+              />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
