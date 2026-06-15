@@ -26,12 +26,14 @@ import {
 } from '@/lib/product-images';
 import { useAuthStore } from '@/stores/auth-store';
 import { SITE_NAME } from '@/lib/site-config';
+import { makeSlug } from '@/lib/slug';
 import type { Attribute, Brand, Category, Product, Variant } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 type ProductForm = {
   title: string;
+  slug: string;
   shortDescription: string;
   description: string;
   category: string;
@@ -51,6 +53,7 @@ type ProductForm = {
 
 const emptyForm = (): ProductForm => ({
   title: '',
+  slug: '',
   shortDescription: '',
   description: '',
   category: '',
@@ -83,6 +86,7 @@ export default function AdminProductsPage() {
   const [loadedVariants, setLoadedVariants] = useState<Variant[]>([]);
   const [existingVariantIds, setExistingVariantIds] = useState<string[]>([]);
   const [form, setForm] = useState<ProductForm>(emptyForm());
+  const [slugTouched, setSlugTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -119,6 +123,7 @@ export default function AdminProductsPage() {
     setMode('list');
     setEditingId(null);
     setForm(emptyForm());
+    setSlugTouched(false);
     setError('');
     gallery.reset();
     thumbnail.reset();
@@ -133,6 +138,7 @@ export default function AdminProductsPage() {
     thumbnail.reset();
     ogImage.reset();
     setForm(emptyForm());
+    setSlugTouched(false);
     setVariantRows([]);
     setLoadedVariants([]);
     setExistingVariantIds([]);
@@ -153,6 +159,7 @@ export default function AdminProductsPage() {
     setEditingId(product._id);
     setForm({
       title: product.title,
+      slug: product.slug,
       shortDescription: product.shortDescription ?? '',
       description: product.description ?? '',
       category: product.category?._id ?? '',
@@ -175,11 +182,17 @@ export default function AdminProductsPage() {
     setLoadedVariants(variants);
     setVariantRows(variantsToRows(assigned, variants, product.title));
     setExistingVariantIds(variants.map((v) => v._id));
+    setSlugTouched(true);
     setError('');
     setMode('edit');
   }
 
   const selectedAssigned = assignedAttributes(activeAttributes, form.attributeIds);
+
+  useEffect(() => {
+    if (mode !== 'create' || slugTouched) return;
+    setForm((prev) => ({ ...prev, slug: makeSlug(prev.title) }));
+  }, [form.title, mode, slugTouched]);
 
   useEffect(() => {
     if (mode === 'list') return;
@@ -256,6 +269,7 @@ export default function AdminProductsPage() {
             token,
             body: JSON.stringify({
               title: form.title,
+              ...(form.slug.trim() ? { slug: form.slug.trim() } : {}),
               shortDescription: form.shortDescription,
               description: form.description,
               category: form.category,
@@ -293,6 +307,7 @@ export default function AdminProductsPage() {
             token,
             body: JSON.stringify({
               title: form.title,
+              ...(form.slug.trim() ? { slug: form.slug.trim() } : {}),
               shortDescription: form.shortDescription,
               description: form.description,
               category: form.category,
@@ -428,6 +443,16 @@ export default function AdminProductsPage() {
               label="Title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
+              required
+            />
+            <Input
+              label="Slug"
+              value={form.slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                setForm({ ...form, slug: e.target.value });
+              }}
+              placeholder="product-url-slug"
               required
             />
             <label className="block space-y-1.5">

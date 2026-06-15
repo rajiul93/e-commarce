@@ -2,6 +2,7 @@ export const revalidate = 60;
 
 import { CategoryImageGrid } from '@/components/shop/category-image-grid';
 import { HomeHero } from '@/components/shop/home-hero';
+import { HorizontalScrollRow } from '@/components/shop/horizontal-scroll-row';
 import { ProductCard } from '@/components/shop/product-card';
 import { getCategories, getHomeCollections, getHomeHero, getProducts } from '@/lib/server-api';
 import type { HomeHeroSettings, Product } from '@/types';
@@ -60,11 +61,13 @@ export default async function HomePage() {
             {collectionProducts.length === 0 ? (
               <p className="text-sm text-zinc-500">No products in this collection yet.</p>
             ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <HorizontalScrollRow>
                 {collectionProducts.map((product) => (
-                  <ProductCard key={`${collection._id}-${product._id}`} product={product} />
+                  <div key={`${collection._id}-${product._id}`} className="w-44 shrink-0 sm:w-52">
+                    <ProductCard product={product} />
+                  </div>
                 ))}
-              </div>
+              </HorizontalScrollRow>
             )}
           </section>
         );
@@ -93,11 +96,13 @@ export default async function HomePage() {
         {products.items.length === 0 ? (
           <p className="mt-8 text-zinc-500">No products yet. Add some from the admin panel.</p>
         ) : (
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <HorizontalScrollRow className="mt-8 -mx-6 px-6 sm:-mx-10 sm:px-10">
             {products.items.map((product) => (
-              <ProductCard key={product._id} product={product} />
+              <div key={product._id} className="w-44 shrink-0 sm:w-52">
+                <ProductCard product={product} />
+              </div>
             ))}
-          </div>
+          </HorizontalScrollRow>
         )}
       </section>
     </div>

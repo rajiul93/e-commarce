@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useProductThumbnail } from '@/hooks/use-product-thumbnail';
 import { apiFetch } from '@/lib/api';
+import { makeSlug } from '@/lib/slug';
 import { uploadMedia, updateMedia, rollbackUploadedMedia } from '@/lib/media-api';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Category } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function AdminCategoriesPage() {
   const token = useAuthStore((s) => s.accessToken);
@@ -19,6 +20,8 @@ export default function AdminCategoriesPage() {
   const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -32,6 +35,8 @@ export default function AdminCategoriesPage() {
     setMode('list');
     setEditingId(null);
     setName('');
+    setSlug('');
+    setSlugTouched(false);
     setDescription('');
     setError('');
     thumbnail.reset();
@@ -40,6 +45,8 @@ export default function AdminCategoriesPage() {
   function startCreate() {
     thumbnail.reset();
     setName('');
+    setSlug('');
+    setSlugTouched(false);
     setDescription('');
     setEditingId(null);
     setMode('create');
@@ -50,11 +57,18 @@ export default function AdminCategoriesPage() {
     thumbnail.reset();
     thumbnail.setExisting(cat.image ?? null);
     setName(cat.categoryName);
+    setSlug(cat.slug);
+    setSlugTouched(true);
     setDescription(cat.description ?? '');
     setEditingId(cat._id);
     setMode('edit');
     setError('');
   }
+
+  useEffect(() => {
+    if (mode !== 'create' || slugTouched) return;
+    setSlug(makeSlug(name));
+  }, [name, mode, slugTouched]);
 
   async function resolveImageId(): Promise<string | null | undefined> {
     if (!token) return undefined;
@@ -92,6 +106,7 @@ export default function AdminCategoriesPage() {
 
       const body = {
         categoryName: name.trim(),
+        ...(slug.trim() ? { slug: slug.trim() } : {}),
         description: description.trim() || undefined,
         ...(imageId !== undefined ? { image: imageId } : {}),
       };
@@ -147,6 +162,16 @@ export default function AdminCategoriesPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input
+              label="Slug"
+              value={slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                setSlug(e.target.value);
+              }}
+              placeholder="category-url-slug"
+              required
+            />
             <Input
               label="Description"
               value={description}
