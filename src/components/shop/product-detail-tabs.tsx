@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 
 type Tab = 'description' | 'reviews';
 
 type Props = {
-  description: ReactNode;
+  descriptionHtml: string;
   hasDescription: boolean;
   averageRating?: number;
 };
@@ -33,7 +33,7 @@ function StarRating({ value }: { value: number }) {
 }
 
 export function ProductDetailTabs({
-  description,
+  descriptionHtml,
   hasDescription,
   averageRating = 0,
 }: Props) {
@@ -72,7 +72,10 @@ export function ProductDetailTabs({
       <div className="pt-6" role="tabpanel">
         {active === 'description' ? (
           hasDescription ? (
-            description
+            <div
+              className="product-description text-sm"
+              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+            />
           ) : (
             <p className="text-sm text-zinc-500">No description available for this product.</p>
           )

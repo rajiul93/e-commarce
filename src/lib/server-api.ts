@@ -11,10 +11,16 @@ import type {
 } from '@/types';
 import { apiUrl } from '@/lib/api-base';
 
-async function serverFetch<T>(path: string, revalidate = 60): Promise<T | null> {
+async function serverFetch<T>(
+  path: string,
+  options?: { revalidate?: number; cache?: RequestCache },
+): Promise<T | null> {
+  const revalidate = options?.revalidate ?? 60;
+  const cache = options?.cache;
+
   try {
-    const res = await fetch(apiUrl(path), {
-      next: { revalidate },
+    const res = await fetch(apiUrl(path, true), {
+      ...(cache ? { cache } : { next: { revalidate } }),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as ApiResponse<T>;
@@ -56,7 +62,9 @@ export async function getProducts(params?: {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  return serverFetch<Product>(`/api/v1/product/by-slug/${encodeURIComponent(slug)}`);
+  return serverFetch<Product>(`/api/v1/product/by-slug/${encodeURIComponent(slug)}`, {
+    cache: 'no-store',
+  });
 }
 
 export async function getProductSlugs(): Promise<string[]> {
@@ -79,7 +87,7 @@ export async function getOrderSettings(): Promise<OrderSettings> {
 
 export async function getHomeCollections(): Promise<Collection[]> {
   try {
-    const res = await fetch(apiUrl('/api/v1/collection?forHome=true'), {
+    const res = await fetch(apiUrl('/api/v1/collection?forHome=true', true), {
       cache: 'no-store',
     });
     if (!res.ok) return [];
@@ -96,7 +104,7 @@ export async function getHomeHero(): Promise<HomeHeroSettings | null> {
 
 export async function getBranding(): Promise<BrandingSettings> {
   try {
-    const res = await fetch(apiUrl('/api/v1/settings/branding'), { cache: 'no-store' });
+    const res = await fetch(apiUrl('/api/v1/settings/branding', true), { cache: 'no-store' });
     if (!res.ok) {
       return {
         siteName: process.env.NEXT_PUBLIC_SITE_NAME?.trim() || 'Shop',
@@ -120,7 +128,7 @@ export async function getBranding(): Promise<BrandingSettings> {
 
 export async function getBrands(): Promise<Brand[]> {
   try {
-    const res = await fetch(apiUrl('/api/v1/brand'), { cache: 'no-store' });
+    const res = await fetch(apiUrl('/api/v1/brand', true), { cache: 'no-store' });
     if (!res.ok) return [];
     const json = (await res.json()) as ApiResponse<Brand[]>;
     return json.data ?? [];

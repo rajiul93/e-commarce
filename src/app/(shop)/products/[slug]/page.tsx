@@ -1,7 +1,7 @@
 export const revalidate = 60;
 
 import { formatPrice } from '@/components/shop/product-card';
-import { isEmptyRichText, ProductDescription } from '@/components/shop/product-description';
+import { sanitizeProductDescription } from '@/components/shop/product-description';
 import { ProductDetailTabs } from '@/components/shop/product-detail-tabs';
 import { getProductAllImages, getProductGalleryImages, getProductThumbnailUrl } from '@/lib/product-image-utils';
 import { buildProductMetadata } from '@/lib/product-seo';
@@ -40,6 +40,7 @@ export default async function ProductDetailPage({
   const allImages = getProductAllImages(product);
   const variants = product.variants ?? [];
   const orderSettings = await getOrderSettings();
+  const descriptionHtml = sanitizeProductDescription(product.description ?? '');
 
   return (
     <div className="space-y-10">
@@ -98,8 +99,8 @@ export default async function ProductDetailPage({
       </div>
 
       <ProductDetailTabs
-        hasDescription={!isEmptyRichText(product.description ?? '')}
-        description={<ProductDescription html={product.description ?? ''} />}
+        hasDescription={Boolean(descriptionHtml)}
+        descriptionHtml={descriptionHtml}
         averageRating={product.averageRating ?? 0}
       />
     </div>
