@@ -137,7 +137,21 @@ body {
   color: #71717a;
 }
 
-.product-description strong {
+.product-description strong,
+.product-description b {
   font-weight: 600;
   color: #3f3f46;
+}
+
+.product-description em,
+.product-description i {
+  font-style: italic;
+}
+
+.product-description u {
+  text-decoration: underline;
+}
+
+.product-description s {
+  text-decoration: line-through;
 }

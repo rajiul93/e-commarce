@@ -1,6 +1,7 @@
 export const revalidate = 60;
 
 import { formatPrice } from '@/components/shop/product-card';
+import { isEmptyRichText, ProductDescription } from '@/components/shop/product-description';
 import { ProductDetailTabs } from '@/components/shop/product-detail-tabs';
 import { getProductAllImages, getProductGalleryImages, getProductThumbnailUrl } from '@/lib/product-image-utils';
 import { buildProductMetadata } from '@/lib/product-seo';
@@ -97,7 +98,8 @@ export default async function ProductDetailPage({
       </div>
 
       <ProductDetailTabs
-        description={product.description ?? ''}
+        hasDescription={!isEmptyRichText(product.description ?? '')}
+        description={<ProductDescription html={product.description ?? ''} />}
         averageRating={product.averageRating ?? 0}
       />
     </div>
