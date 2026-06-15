@@ -12,7 +12,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
     <QueryProvider>
       <AuthInitializer />
       <ShopHeader initialBranding={branding} />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-24 sm:py-10 md:pb-10">
+      <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 px-4 py-6 pb-24 sm:py-10 md:pb-10">
         {children}
       </main>
       <ShopFooter branding={branding} />

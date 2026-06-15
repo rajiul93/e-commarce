@@ -9,9 +9,9 @@ type Props = {
 export function HorizontalScrollRow({ children, className = '', innerClassName = '' }: Props) {
   return (
     <div
-      className={`-mx-4 overflow-x-auto px-4 pb-2 scrollbar-thin ${className}`}
+      className={`-mx-4 min-w-0 max-w-full overflow-x-auto overscroll-x-contain px-4 pb-2 touch-pan-x [-webkit-overflow-scrolling:touch] ${className}`}
     >
-      <div className={`flex w-max gap-4 ${innerClassName}`}>{children}</div>
+      <div className={`flex w-max flex-nowrap gap-4 ${innerClassName}`}>{children}</div>
     </div>
   );
 }
