@@ -1,4 +1,5 @@
 export const revalidate = 60;
+export const dynamicParams = true;
 
 import { formatPrice } from '@/components/shop/product-card';
 import { sanitizeProductDescription } from '@/components/shop/product-description';
@@ -40,7 +41,13 @@ export default async function ProductDetailPage({
   const allImages = getProductAllImages(product);
   const variants = product.variants ?? [];
   const orderSettings = await getOrderSettings();
-  const descriptionHtml = sanitizeProductDescription(product.description ?? '');
+
+  let descriptionHtml = '';
+  try {
+    descriptionHtml = sanitizeProductDescription(product.description ?? '');
+  } catch {
+    descriptionHtml = '';
+  }
 
   return (
     <div className="space-y-10">

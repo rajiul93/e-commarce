@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 
 type Props = {
   html: string;
@@ -22,8 +22,6 @@ const ALLOWED_TAGS = [
   'a',
   'blockquote',
 ];
-
-const ALLOWED_ATTR = ['href', 'target', 'rel', 'class'];
 
 function escapeHtml(text: string): string {
   return text
@@ -62,10 +60,17 @@ export function sanitizeProductDescription(html: string): string {
   const normalized = normalizeProductDescriptionHtml(html);
   if (!normalized) return '';
 
-  return DOMPurify.sanitize(normalized, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-  });
+  try {
+    return sanitizeHtml(normalized, {
+      allowedTags: ALLOWED_TAGS,
+      allowedAttributes: {
+        a: ['href', 'target', 'rel'],
+        '*': ['class'],
+      },
+    });
+  } catch {
+    return escapeHtml(normalized.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+  }
 }
 
 export function ProductDescription({ html, className = '' }: Props) {
