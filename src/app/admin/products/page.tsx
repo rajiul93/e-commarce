@@ -1,6 +1,7 @@
 'use client';
 
 import { ProductVariantSetup } from '@/components/admin/product-variant-setup';
+import { RichTextEditor } from '@/components/admin/rich-text-editor';
 import { ProductImagePicker } from '@/components/admin/product-image-picker';
 import { ProductThumbnailPicker } from '@/components/admin/product-thumbnail-picker';
 import { formatPrice } from '@/components/shop/product-card';
@@ -504,15 +505,12 @@ export default function AdminProductsPage() {
             onChange={(e) => setForm({ ...form, shortDescription: e.target.value })}
           />
 
-          <label className="block space-y-1.5">
-            <span className="text-sm font-medium">Description</span>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              rows={3}
-            />
-          </label>
+          <RichTextEditor
+            label="Description"
+            value={form.description}
+            onChange={(description) => setForm({ ...form, description })}
+            placeholder="Full product details, specs, care instructions…"
+          />
 
           <label className="block space-y-1.5">
             <span className="text-sm font-medium">Status</span>
