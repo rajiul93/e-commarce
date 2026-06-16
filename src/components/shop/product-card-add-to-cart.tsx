@@ -83,10 +83,10 @@ export function ProductCardAddToCart({ productId, slug, inStock, className = '' 
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className={`w-full rounded-xl py-2.5 text-xs font-semibold transition ${className} ${
+      className={`w-full py-2.5 text-xs font-semibold transition ${className} ${
         added
           ? 'bg-emerald-600 text-white'
-          : 'bg-zinc-900 text-white hover:bg-zinc-800 disabled:opacity-60'
+          : 'bg-primary text-primary-foreground hover:bg-primary/70 disabled:opacity-60'
       }`}
     >
       {loading ? 'Adding…' : added ? 'Added ✓' : 'Add to cart'}

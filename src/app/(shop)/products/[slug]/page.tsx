@@ -1,4 +1,4 @@
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { formatPrice } from '@/components/shop/product-card';

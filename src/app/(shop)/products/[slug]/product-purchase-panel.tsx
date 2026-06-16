@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import {
   findVariantBySelection,
   getAvailableValues,
-  getVariantAxes,
+  isVariantValueInStock,
+  resolveVariantAxes,
 } from '@/lib/variant-utils';
 import { apiFetch } from '@/lib/api';
 import { useInvalidateShopCounts } from '@/hooks/use-shop-counts';
@@ -57,14 +58,10 @@ export function ProductPurchasePanel({
     [variants],
   );
 
-  const axes = useMemo(() => {
-    if (productAttributes.length) {
-      return productAttributes
-        .filter((a) => a.status === 'active')
-        .map((a) => ({ name: a.name, values: a.values }));
-    }
-    return getVariantAxes(activeVariants);
-  }, [productAttributes, activeVariants]);
+  const axes = useMemo(
+    () => resolveVariantAxes(activeVariants, productAttributes),
+    [productAttributes, activeVariants],
+  );
 
   useEffect(() => {
     setSelection({});
@@ -201,15 +198,19 @@ export function ProductPurchasePanel({
             <div className="flex flex-wrap gap-2">
               {available.map((value) => {
                 const isSelected = selection[axis.name] === value;
+                const inStock = isVariantValueInStock(activeVariants, axis.name, value, selection);
                 return (
                   <button
                     key={value}
                     type="button"
+                    disabled={!inStock}
                     onClick={() => selectValue(axis.name, value)}
                     className={`rounded-lg border px-3 py-1.5 text-sm transition ${
                       isSelected
                         ? 'border-zinc-900 bg-zinc-900 text-white'
-                        : 'border-zinc-300 hover:border-zinc-900'
+                        : inStock
+                          ? 'border-zinc-300 hover:border-zinc-900'
+                          : 'cursor-not-allowed border-zinc-200 text-zinc-400 line-through'
                     }`}
                   >
                     {value}

@@ -1,4 +1,5 @@
 import type { Attribute, Variant } from '@/types';
+import { attributeCombinationKey } from '@/lib/variant-utils';
 
 export type VariantDraftRow = {
   localId: string;
@@ -33,6 +34,20 @@ export function suggestSku(productTitle: string, attrValues: Record<string, stri
 export function assignedAttributes(all: Attribute[], ids: string[]): Attribute[] {
   return ids
     .map((id) => all.find((a) => a._id === id))
+    .filter((a): a is Attribute => !!a && a.status === 'active');
+}
+
+/** Prefer attribute catalog; fall back to product.attributes when catalog is not loaded yet. */
+export function resolveAssignedAttributes(
+  productAttrs: Attribute[],
+  catalog: Attribute[],
+  attributeIds: string[],
+): Attribute[] {
+  const catalogById = new Map(catalog.map((a) => [a._id, a]));
+  const productById = new Map(productAttrs.map((a) => [a._id, a]));
+
+  return attributeIds
+    .map((id) => catalogById.get(id) ?? productById.get(id))
     .filter((a): a is Attribute => !!a && a.status === 'active');
 }
 
@@ -111,8 +126,10 @@ export function variantsToRows(
   existing: Variant[],
   productTitle: string,
 ): VariantDraftRow[] {
-  if (!assigned.length) return [];
-  if (!existing.length) return [emptyRow(assigned, productTitle)];
+  if (!existing.length) {
+    if (!assigned.length) return [];
+    return [emptyRow(assigned, productTitle)];
+  }
   return existing.map((v) => ({
     localId: newLocalId(),
     attrValues: Object.fromEntries(v.attributes.map((a) => [a.name, a.value])),
@@ -131,7 +148,9 @@ export function rebuildRowsForAttributes(
   prev: VariantDraftRow[],
   existing: Variant[] = [],
 ): VariantDraftRow[] {
-  if (!assigned.length) return [];
+  if (!assigned.length) {
+    return existing.length ? variantsToRows([], existing, productTitle) : [];
+  }
 
   const names = assigned.map((a) => a.name).sort().join('|');
   const prevNames = Object.keys(prev[0]?.attrValues ?? {})
@@ -174,4 +193,29 @@ export function enabledRows(rows: VariantDraftRow[], assigned: Attribute[]): Var
       r.price >= 0 &&
       assigned.every((a) => Boolean(r.attrValues[a.name]?.trim())),
   );
+}
+
+/** Returns an error message when enabled rows share the same attribute combination. */
+export function validateUniqueVariantRows(
+  rows: VariantDraftRow[],
+  assigned: Attribute[],
+): string | null {
+  const active = enabledRows(rows, assigned);
+  const seen = new Map<string, string>();
+
+  for (const row of active) {
+    const pairs = assigned.map((a) => ({
+      name: a.name,
+      value: row.attrValues[a.name]?.trim() ?? '',
+    }));
+    const key = attributeCombinationKey(pairs);
+    const label = pairs.map((p) => `${p.name}: ${p.value}`).join(', ');
+
+    if (seen.has(key)) {
+      return `Duplicate variant combination (${label}). Each attribute combination can only exist once per product.`;
+    }
+    seen.set(key, row.sku);
+  }
+
+  return null;
 }

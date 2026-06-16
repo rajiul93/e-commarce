@@ -49,11 +49,11 @@ export function ProductCardWishlist({ productId, className = '' }: Props) {
       aria-label={saved ? 'Saved to wishlist' : 'Add to wishlist'}
       onClick={handleClick}
       disabled={loading}
-      className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-md ring-1 ring-zinc-950/5 backdrop-blur-sm transition hover:scale-105 hover:text-rose-600 disabled:cursor-default ${className}`}
+      className={`flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-md ring-1 ring-zinc-950/5 backdrop-blur-sm transition hover:scale-105 hover:text-primary disabled:cursor-default ${className}`}
     >
       <svg
         viewBox="0 0 24 24"
-        className={`h-4 w-4 ${saved ? 'fill-rose-500 text-rose-500' : 'fill-none'}`}
+        className={`h-4 w-4 ${saved ? 'fill-primary text-primary' : 'fill-none'}`}
         stroke="currentColor"
         strokeWidth={2}
       >

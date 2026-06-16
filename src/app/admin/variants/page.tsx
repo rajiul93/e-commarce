@@ -3,7 +3,7 @@
 import { formatPrice } from '@/components/shop/product-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatVariantLabel } from '@/lib/variant-utils';
+import { formatVariantLabel, findVariantWithAttributes } from '@/lib/variant-utils';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Attribute, Product, Variant } from '@/types';
@@ -93,6 +93,32 @@ export default function AdminVariantsPage() {
     }));
   }
 
+  const isSingleAttribute = productAttributes.length === 1;
+  const missingAttrValues = productAttributes.some((a) => !form.attrValues[a.name]);
+
+  const takenAttributeValues = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const attr of productAttributes) {
+      map.set(attr.name, new Set());
+    }
+    for (const variant of variants.data ?? []) {
+      if (variant._id === editingId) continue;
+      for (const a of variant.attributes) {
+        map.get(a.name)?.add(a.value);
+      }
+    }
+    return map;
+  }, [productAttributes, variants.data, editingId]);
+
+  const duplicateCombination = useMemo(() => {
+    if (missingAttrValues) return null;
+    const attributes = buildAttributesPayload();
+    const match = findVariantWithAttributes(variants.data ?? [], attributes, editingId ?? undefined);
+    if (!match) return null;
+    return `This combination already exists (SKU: ${match.sku}). Each attribute value set can only be used once per product.`;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.attrValues, variants.data, editingId, productAttrKey, missingAttrValues]);
+
   const saveVariant = useMutation({
     mutationFn: () => {
       const attributes = buildAttributesPayload();
@@ -135,14 +161,13 @@ export default function AdminVariantsPage() {
     },
   });
 
-  const missingAttrValues = productAttributes.some((a) => !form.attrValues[a.name]);
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Variants</h1>
         <p className="text-sm text-zinc-500">
-          1. Create attributes → 2. Assign to product → 3. Add variants with price & stock
+          1. Create attributes → 2. Assign to product → 3. Add variants with price & stock.
+          Each attribute combination can only exist once per product.
         </p>
       </div>
 
@@ -202,11 +227,17 @@ export default function AdminVariantsPage() {
                     className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
                   >
                     <option value="">Select {attr.name}</option>
-                    {attr.values.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
+                    {attr.values.map((v) => {
+                      const taken =
+                        isSingleAttribute &&
+                        (takenAttributeValues.get(attr.name)?.has(v) ?? false);
+                      return (
+                        <option key={v} value={v} disabled={taken}>
+                          {v}
+                          {taken ? ' (already used)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </label>
               ))}
@@ -258,7 +289,10 @@ export default function AdminVariantsPage() {
             </div>
 
             <div className="flex gap-2">
-              <Button type="submit" disabled={saveVariant.isPending || missingAttrValues}>
+              <Button
+                type="submit"
+                disabled={saveVariant.isPending || missingAttrValues || Boolean(duplicateCombination)}
+              >
                 {editingId ? 'Update variant' : 'Add variant'}
               </Button>
               {editingId ? (
@@ -267,6 +301,9 @@ export default function AdminVariantsPage() {
                 </Button>
               ) : null}
             </div>
+            {duplicateCombination ? (
+              <p className="text-sm text-red-600">{duplicateCombination}</p>
+            ) : null}
             {saveVariant.isError ? (
               <p className="text-sm text-red-600">
                 {saveVariant.error instanceof Error ? saveVariant.error.message : 'Save failed'}

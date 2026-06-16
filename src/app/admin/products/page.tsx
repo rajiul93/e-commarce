@@ -12,8 +12,9 @@ import { useProductThumbnail } from '@/hooks/use-product-thumbnail';
 import { apiFetch } from '@/lib/api';
 import { getProductThumbnailUrl } from '@/lib/product-image-utils';
 import {
-  assignedAttributes,
   rebuildRowsForAttributes,
+  resolveAssignedAttributes,
+  validateUniqueVariantRows,
   variantsToRows,
   type VariantDraftRow,
 } from '@/lib/variant-draft';
@@ -155,7 +156,11 @@ export default function AdminProductsPage() {
       token,
       params: { productId: product._id },
     });
-    const assigned = assignedAttributes(activeAttributes, (product.attributes ?? []).map((a) => a._id));
+    const assigned = resolveAssignedAttributes(
+      product.attributes ?? [],
+      activeAttributes,
+      (product.attributes ?? []).map((a) => a._id),
+    );
 
     setEditingId(product._id);
     setForm({
@@ -188,7 +193,16 @@ export default function AdminProductsPage() {
     setMode('edit');
   }
 
-  const selectedAssigned = assignedAttributes(activeAttributes, form.attributeIds);
+  const editingProduct =
+    mode === 'edit' && editingId
+      ? (products.data ?? []).find((p) => p._id === editingId)
+      : undefined;
+
+  const selectedAssigned = resolveAssignedAttributes(
+    editingProduct?.attributes ?? [],
+    activeAttributes,
+    form.attributeIds,
+  );
 
   useEffect(() => {
     if (mode !== 'create' || slugTouched) return;
@@ -197,16 +211,31 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     if (mode === 'list') return;
+
+    const productAttrs = editingProduct?.attributes ?? [];
+    const assigned = resolveAssignedAttributes(
+      productAttrs,
+      activeAttributes,
+      form.attributeIds,
+    );
+
     setVariantRows((prev) =>
       rebuildRowsForAttributes(
-        selectedAssigned,
+        assigned,
         form.title,
         prev,
         mode === 'edit' ? loadedVariants : [],
       ),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.attributeIds.join(','), mode]);
+  }, [
+    form.attributeIds.join(','),
+    mode,
+    attributes.data,
+    loadedVariants,
+    form.title,
+    editingId,
+    products.data,
+  ]);
 
   useEffect(() => {
     if (mode !== 'create' || selectedAssigned.length !== 1) return;
@@ -237,6 +266,13 @@ export default function AdminProductsPage() {
 
     setSubmitting(true);
     setError('');
+
+    const duplicateVariants = validateUniqueVariantRows(variantRows, selectedAssigned);
+    if (duplicateVariants) {
+      setError(duplicateVariants);
+      setSubmitting(false);
+      return;
+    }
 
     const alt = form.title.trim() || 'Product image';
     const ogAlt = form.ogTitle.trim() || form.seoTitle.trim() || alt;

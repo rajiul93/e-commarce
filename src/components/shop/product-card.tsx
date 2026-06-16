@@ -69,7 +69,7 @@ export function ProductCard({ product }: { product: Product }) {
   const rating = product.averageRating ?? 0;
 
   return (
-    <article className="group/card relative flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-950/5 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-zinc-900/10">
+    <article className="group/card relative flex h-full flex-col overflow-hidden  bg-white shadow-sm ring-1 ring-zinc-950/5 transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-zinc-900/10">
       <ProductCardWishlist
         productId={product._id}
         className="absolute right-3 top-3 z-20"
@@ -125,47 +125,46 @@ export function ProductCard({ product }: { product: Product }) {
               {product.category.categoryName}
             </p>
           ) : null}
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 transition group-hover/card:text-zinc-700">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 transition group-hover/card:text-primary">
             {product.title}
           </h3>
         </Link>
 
-        {rating > 0 ? <StarRating value={rating} /> : null}
 
-        {product.shortDescription ? (
-          <p className="line-clamp-2 text-xs leading-relaxed text-zinc-500">
-            {product.shortDescription}
-          </p>
-        ) : null}
+      
 
         <div className="mt-auto space-y-2 pt-1">
           {onOffer && product.minPrice != null ? (
             <div className="flex flex-wrap items-end gap-2">
-              <p className="text-lg font-bold tracking-tight text-rose-600">
+              <p className="text-lg font-bold tracking-tight text-primary">
                 {formatPriceRange(minSale, maxSale)}
               </p>
               <p className="pb-0.5 text-xs text-zinc-400 line-through">
                 {formatPriceRange(product.minPrice, product.maxPrice)}
               </p>
               {offerLabel ? (
-                <span className="rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
+                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
                   {offerLabel}
                 </span>
               ) : null}
             </div>
           ) : (
-            <p className="text-lg font-bold tracking-tight text-zinc-900">
+            <p className="text-lg font-bold tracking-tight text-primary">
               {formatPriceRange(product.minPrice, product.maxPrice)}
             </p>
           )}
 
-          {lowStock ? (
+ <div className="flex justify-between items-center">
+ {lowStock ? (
             <p className="text-[11px] font-medium text-amber-600">
               Only {totalStock} left
             </p>
           ) : inStock ? (
             <p className="text-[11px] font-medium text-emerald-600">In stock</p>
           ) : null}
+        {rating > 0 ? <StarRating value={rating} /> : null}
+
+ </div>
 
           <ProductCardAddToCart
             productId={product._id}
