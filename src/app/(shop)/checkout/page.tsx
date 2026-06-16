@@ -3,6 +3,7 @@
 import { formatPrice } from '@/components/shop/product-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useInvalidateShopCounts } from '@/hooks/use-shop-counts';
 import { apiFetch } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Address, CheckoutPreview, Order } from '@/types';
@@ -12,6 +13,7 @@ import { useEffect, useState } from 'react';
 export default function CheckoutPage() {
   const router = useRouter();
   const token = useAuthStore((s) => s.accessToken);
+  const { invalidateCart } = useInvalidateShopCounts();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressId, setAddressId] = useState('');
   const [couponCode, setCouponCode] = useState('');
@@ -69,6 +71,7 @@ export default function CheckoutPage() {
         }),
       });
       setSuccess(`Order ${order.orderNumber} placed successfully!`);
+      await invalidateCart();
       setTimeout(() => router.push('/account/orders'), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Order failed');

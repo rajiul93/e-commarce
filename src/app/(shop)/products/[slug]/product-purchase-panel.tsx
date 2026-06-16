@@ -1,22 +1,25 @@
 'use client';
 
+import { CartQuantityControls } from '@/components/shop/cart-quantity-controls';
 import { formatPrice } from '@/components/shop/product-card';
 import { Button } from '@/components/ui/button';
 import { Dialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useCart } from '@/hooks/use-cart';
+import { findCartLine } from '@/lib/cart-utils';
+import { apiFetch } from '@/lib/api';
 import {
   findVariantBySelection,
   getAvailableValues,
   isVariantValueInStock,
   resolveVariantAxes,
 } from '@/lib/variant-utils';
-import { apiFetch } from '@/lib/api';
-import { useInvalidateShopCounts } from '@/hooks/use-shop-counts';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Attribute, OrderSettings, Variant } from '@/types';
+import { WishlistButton } from '@/components/shop/wishlist-button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const emptyGuestForm = {
   name: '',
@@ -34,6 +37,9 @@ type Props = {
   orderSettings: OrderSettings;
 };
 
+const actionBtnClass =
+  'inline-flex shrink-0 items-center justify-center !rounded-md !px-2 !py-1.5 !text-[11px] !leading-tight sm:!rounded-lg sm:!px-4 sm:!py-2 sm:!text-sm';
+
 export function ProductPurchasePanel({
   productId,
   variants,
@@ -42,9 +48,9 @@ export function ProductPurchasePanel({
 }: Props) {
   const router = useRouter();
   const token = useAuthStore((s) => s.accessToken);
-  const { invalidateCart } = useInvalidateShopCounts();
+  const { cart, addToCart, updateLineQuantity, updatingLineId } = useCart();
   const [selection, setSelection] = useState<Record<string, string>>({});
-  const [quantity, setQuantity] = useState(1);
+  const [draftQuantities, setDraftQuantities] = useState<Record<string, number>>({});
   const [cartLoading, setCartLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -63,18 +69,19 @@ export function ProductPurchasePanel({
     [productAttributes, activeVariants],
   );
 
-  useEffect(() => {
-    setSelection({});
-    setGuestDialogOpen(false);
-    setGuestForm(emptyGuestForm);
-    setGuestSuccess('');
-    setGuestError('');
-    setMessage('');
-  }, [productId]);
-
   const selectedVariant = findVariantBySelection(activeVariants, selection);
   const allAxesSelected = axes.every((axis) => selection[axis.name]);
   const outOfStock = !selectedVariant || selectedVariant.stock < 1;
+  const cartLine = selectedVariant
+    ? findCartLine(cart, productId, selectedVariant._id)
+    : undefined;
+  const inCart = Boolean(cartLine);
+  const cartLineLoading = cartLine ? updatingLineId === cartLine._id : false;
+  const draftQuantity = selectedVariant
+    ? (draftQuantities[selectedVariant._id] ?? 1)
+    : 1;
+  const displayQuantity = inCart && cartLine ? cartLine.quantity : draftQuantity;
+  const maxQuantity = selectedVariant?.stock;
 
   function selectValue(axisName: string, value: string) {
     setSelection((prev) => {
@@ -86,6 +93,42 @@ export function ProductPurchasePanel({
       }
       return next;
     });
+  }
+
+  async function handleQuantityIncrement() {
+    if (!selectedVariant || !allAxesSelected || outOfStock) return;
+
+    if (inCart && cartLine) {
+      try {
+        await updateLineQuantity(cartLine._id, cartLine.quantity + 1);
+      } catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Failed to update quantity');
+      }
+      return;
+    }
+
+    setDraftQuantities((prev) => ({
+      ...prev,
+      [selectedVariant._id]: Math.min((prev[selectedVariant._id] ?? 1) + 1, selectedVariant.stock),
+    }));
+  }
+
+  async function handleQuantityDecrement() {
+    if (!selectedVariant || !allAxesSelected) return;
+
+    if (inCart && cartLine) {
+      try {
+        await updateLineQuantity(cartLine._id, cartLine.quantity - 1);
+      } catch (err) {
+        setMessage(err instanceof Error ? err.message : 'Failed to update quantity');
+      }
+      return;
+    }
+
+    setDraftQuantities((prev) => ({
+      ...prev,
+      [selectedVariant._id]: Math.max((prev[selectedVariant._id] ?? 1) - 1, 1),
+    }));
   }
 
   async function handleAddToCart() {
@@ -101,16 +144,11 @@ export function ProductPurchasePanel({
     setCartLoading(true);
     setMessage('');
     try {
-      await apiFetch('/api/v1/cart/items', {
-        method: 'POST',
-        token,
-        body: JSON.stringify({
-          productId,
-          variantId: selectedVariant._id,
-          quantity,
-        }),
+      await addToCart({
+        productId,
+        variantId: selectedVariant._id,
+        quantity: draftQuantity,
       });
-      await invalidateCart();
       setMessage('Added to cart');
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Failed to add');
@@ -150,7 +188,7 @@ export function ProductPurchasePanel({
             {
               productId,
               variantId: selectedVariant._id,
-              quantity,
+              quantity: draftQuantity,
             },
           ],
           guestContact: {
@@ -193,9 +231,9 @@ export function ProductPurchasePanel({
       {axes.map((axis) => {
         const available = getAvailableValues(activeVariants, axis.name, selection);
         return (
-          <div key={axis.name} className="space-y-2">
-            <span className="text-sm font-medium">{axis.name}</span>
-            <div className="flex flex-wrap gap-2">
+          <div key={axis.name} className="flex flex-wrap items-center justify-start gap-x-3 gap-y-2">
+            <div className="shrink-0 text-sm font-bold">{axis.name}</div>
+            <div className="flex flex-wrap items-center justify-start gap-2">
               {available.map((value) => {
                 const isSelected = selection[axis.name] === value;
                 const inStock = isVariantValueInStock(activeVariants, axis.name, value, selection);
@@ -226,54 +264,91 @@ export function ProductPurchasePanel({
         <p className="text-lg font-semibold">{formatPrice(selectedVariant.price)}</p>
       ) : null}
 
-      <label className="block space-y-1.5">
-        <span className="text-sm font-medium">Quantity</span>
-        <input
-          type="number"
-          min={1}
-          max={selectedVariant?.stock ?? 1}
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-          disabled={!selectedVariant}
-          className="w-24 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-        />
-      </label>
+      <div className="flex flex-col items-center justify-start gap-2.5 sm:gap-3">
+        <div className="flex w-full items-center justify-start gap-1.5 sm:gap-2">
+          <span className="text-xs font-medium text-zinc-700 sm:text-sm">Qty</span>
+          <CartQuantityControls
+            quantity={displayQuantity}
+            max={maxQuantity}
+            disabled={!selectedVariant || !allAxesSelected || outOfStock}
+            loading={cartLineLoading}
+            size="sm"
+            onIncrement={handleQuantityIncrement}
+            onDecrement={handleQuantityDecrement}
+          />
+          {inCart ? (
+            <span className="text-[10px] text-zinc-500 sm:text-xs">In cart</span>
+          ) : null}
+        </div>
 
-      <div className="flex flex-wrap gap-2">
-        {orderSettings.loggedInCheckout ? (
-          <>
+        <div className="flex w-full flex-wrap items-center justify-start gap-1.5 sm:gap-2">
+          {orderSettings.loggedInCheckout ? (
+            <>
+              {inCart ? (
+                <Link
+                  href="/account/cart"
+                  className={`inline-flex items-center rounded-md bg-primary font-semibold text-primary-foreground transition hover:bg-primary/70 ${actionBtnClass}`}
+                >
+                  <span className="sm:hidden">Cart</span>
+                  <span className="hidden sm:inline">Go to cart</span>
+                </Link>
+              ) : (
+                <Button
+                  className={actionBtnClass}
+                  onClick={handleAddToCart}
+                  disabled={cartLoading || !allAxesSelected || outOfStock}
+                >
+                  {!allAxesSelected ? (
+                    <>
+                      <span className="sm:hidden">Options</span>
+                      <span className="hidden sm:inline">Select options</span>
+                    </>
+                  ) : outOfStock ? (
+                    <>
+                      <span className="sm:hidden">Sold out</span>
+                      <span className="hidden sm:inline">Out of stock</span>
+                    </>
+                  ) : cartLoading ? (
+                    '…'
+                  ) : (
+                    <>
+                      <span className="sm:hidden">Add</span>
+                      <span className="hidden sm:inline">Add to cart</span>
+                    </>
+                  )}
+                </Button>
+              )}
+            </>
+          ) : null}
+
+          {orderSettings.guestQuickOrder ? (
             <Button
-              onClick={handleAddToCart}
-              disabled={cartLoading || !allAxesSelected || outOfStock}
+              variant="secondary"
+              className={actionBtnClass}
+              onClick={openGuestDialog}
+              disabled={!allAxesSelected || outOfStock}
+              title={!allAxesSelected ? 'Select all options first' : undefined}
             >
-              {!allAxesSelected
-                ? 'Select options'
-                : outOfStock
-                  ? 'Out of stock'
-                  : cartLoading
-                    ? 'Adding…'
-                    : 'Add to cart'}
+              {outOfStock ? (
+                <>
+                  <span className="sm:hidden">Sold out</span>
+                  <span className="hidden sm:inline">Out of stock</span>
+                </>
+              ) : (
+                <>
+                  <span className="sm:hidden">Order</span>
+                  <span className="hidden sm:inline">Quick order</span>
+                </>
+              )}
             </Button>
-            {token ? (
-              <Link
-                href="/account/cart"
-                className="inline-flex items-center rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50"
-              >
-                View cart
-              </Link>
-            ) : null}
-          </>
-        ) : null}
+          ) : null}
 
-        {orderSettings.guestQuickOrder ? (
-          <Button
-            variant="secondary"
-            onClick={openGuestDialog}
-            disabled={!allAxesSelected || outOfStock}
-          >
-            {!allAxesSelected ? 'Select options' : outOfStock ? 'Out of stock' : 'Order'}
-          </Button>
-        ) : null}
+          <WishlistButton
+            productId={productId}
+            className={actionBtnClass}
+            onMessage={(text) => setMessage(text)}
+          />
+        </div>
       </div>
 
       {orderSettings.loggedInCheckout && !token ? (
@@ -344,7 +419,17 @@ export function ProductPurchasePanel({
         </form>
       </Dialog>
 
-      {message ? <p className="text-sm text-red-600">{message}</p> : null}
+      {message ? (
+        <p
+          className={`text-sm ${
+            message === 'Added to cart' || message === 'Added to wishlist'
+              ? 'text-green-600'
+              : 'text-red-600'
+          }`}
+        >
+          {message}
+        </p>
+      ) : null}
       {guestSuccess ? <p className="text-sm text-green-600">{guestSuccess}</p> : null}
     </div>
   );

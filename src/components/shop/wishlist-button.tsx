@@ -7,7 +7,15 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export function WishlistButton({ productId }: { productId: string }) {
+export function WishlistButton({
+  productId,
+  className = '',
+  onMessage,
+}: {
+  productId: string;
+  className?: string;
+  onMessage?: (message: string) => void;
+}) {
   const router = useRouter();
   const token = useAuthStore((s) => s.accessToken);
   const { invalidateWishlist } = useInvalidateShopCounts();
@@ -28,20 +36,31 @@ export function WishlistButton({ productId }: { productId: string }) {
         body: JSON.stringify({ productId }),
       });
       await invalidateWishlist();
-      setMessage('Added to wishlist');
+      const text = 'Added to wishlist';
+      setMessage(text);
+      onMessage?.(text);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed');
+      const text = err instanceof Error ? err.message : 'Failed';
+      setMessage(text);
+      onMessage?.(text);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div>
-      <Button variant="secondary" onClick={handleClick} disabled={loading}>
-        {loading ? 'Saving…' : 'Add to wishlist'}
+    <>
+      <Button variant="secondary" onClick={handleClick} disabled={loading} className={className}>
+        {loading ? (
+          '…'
+        ) : (
+          <>
+            <span className="sm:hidden">Wishlist</span>
+            <span className="hidden sm:inline">Add to wishlist</span>
+          </>
+        )}
       </Button>
-      {message ? <p className="mt-2 text-sm text-zinc-500">{message}</p> : null}
-    </div>
+      {message && !onMessage ? <p className="mt-2 text-sm text-zinc-500">{message}</p> : null}
+    </>
   );
 }

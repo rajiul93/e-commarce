@@ -3,6 +3,7 @@ export const revalidate = 60;
 import { CategoryImageGrid } from '@/components/shop/category-image-grid';
 import { HomeHero } from '@/components/shop/home-hero';
 import { HorizontalScrollRow } from '@/components/shop/horizontal-scroll-row';
+import { ProductCarousel } from '@/components/shop/product-carousel';
 import { ProductCard } from '@/components/shop/product-card';
 import { getCategories, getHomeCollections, getHomeHero, getProducts } from '@/lib/server-api';
 import type { HomeHeroSettings, Product } from '@/types';
@@ -39,12 +40,12 @@ export default async function HomePage() {
         return (
           <section key={collection._id} className="space-y-6">
             {collection.showBannerOnHome && collection.banner?.url ? (
-              <div className="overflow-hidden rounded-3xl shadow-sm ring-1 ring-zinc-950/5">
+              <div className="overflow-hidden shadow-sm ring-1 ring-zinc-950/5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={collection.banner.url}
                   alt={collection.name}
-                  className="h-48 w-full object-cover sm:h-72"
+                  className="h-48 w-full rounded-none object-cover sm:h-72"
                 />
               </div>
             ) : null}
@@ -61,13 +62,11 @@ export default async function HomePage() {
             {collectionProducts.length === 0 ? (
               <p className="text-sm text-zinc-500">No products in this collection yet.</p>
             ) : (
-              <HorizontalScrollRow>
+              <ProductCarousel>
                 {collectionProducts.map((product) => (
-                  <div key={`${collection._id}-${product._id}`} className="w-44 shrink-0 sm:w-52">
-                    <ProductCard product={product} />
-                  </div>
+                  <ProductCard key={`${collection._id}-${product._id}`} product={product} />
                 ))}
-              </HorizontalScrollRow>
+              </ProductCarousel>
             )}
           </section>
         );

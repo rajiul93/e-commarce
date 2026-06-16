@@ -19,7 +19,7 @@ export function CategoryImageGrid({ categories }: { categories: Category[] }) {
           <Link
             key={cat._id}
             href={`/products?category=${cat._id}`}
-            className="group w-24 shrink-0 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-zinc-950/5 transition hover:-translate-y-0.5 hover:shadow-md sm:w-28"
+            className="group w-24 shrink-0 overflow-hidden bg-white shadow-sm ring-1 ring-zinc-950/5 transition hover:-translate-y-0.5 hover:shadow-md sm:w-28"
             title={cat.categoryName}
           >
             <div className="aspect-square overflow-hidden bg-zinc-100">
@@ -27,7 +27,7 @@ export function CategoryImageGrid({ categories }: { categories: Category[] }) {
               <img
                 src={cat.image!.url}
                 alt={cat.categoryName}
-                className="h-full w-full object-cover transition group-hover:scale-105"
+                className="h-full w-full rounded-none object-cover transition group-hover:scale-105"
               />
             </div>
           </Link>

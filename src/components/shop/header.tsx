@@ -61,7 +61,7 @@ export function ShopHeader({ initialBranding }: ShopHeaderProps) {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 xl:px-4"
+              className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 xl:px-4"
             >
               {link.label}
             </Link>
@@ -71,13 +71,13 @@ export function ShopHeader({ initialBranding }: ShopHeaderProps) {
         <nav className="hidden items-center gap-0.5 sm:flex lg:hidden">
           <Link
             href="/products"
-            className="rounded-full px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+            className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
           >
             Products
           </Link>
           <Link
             href="/about-us"
-            className="rounded-full px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+            className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
           >
             About
           </Link>
@@ -106,14 +106,14 @@ export function ShopHeader({ initialBranding }: ShopHeaderProps) {
             <>
               <Link
                 href="/account"
-                className="hidden rounded-full px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 sm:inline"
+                className="hidden rounded-full px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 sm:inline"
               >
                 Account
               </Link>
               {user.role === 'ADMIN' ? (
                 <Link
                   href="/admin"
-                  className="hidden rounded-full px-3 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100 sm:inline"
+                  className="hidden rounded-full px-3 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100 sm:inline"
                 >
                   Admin
                 </Link>
@@ -121,7 +121,7 @@ export function ShopHeader({ initialBranding }: ShopHeaderProps) {
               <button
                 type="button"
                 onClick={() => void logoutSession()}
-                className="rounded-full px-3 py-2 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+                className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
               >
                 Logout
               </button>
@@ -130,7 +130,7 @@ export function ShopHeader({ initialBranding }: ShopHeaderProps) {
             <>
               <Link
                 href="/login"
-                className="rounded-full px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+                className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
               >
                 Login
               </Link>

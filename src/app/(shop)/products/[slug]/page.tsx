@@ -9,7 +9,6 @@ import { buildProductMetadata } from '@/lib/product-seo';
 import { getOrderSettings, getProductBySlug, getProductSlugs } from '@/lib/server-api';
 import { notFound } from 'next/navigation';
 import { ProductPurchasePanel } from './product-purchase-panel';
-import { WishlistButton } from '@/components/shop/wishlist-button';
 
 export async function generateStaticParams() {
   const slugs = await getProductSlugs();
@@ -96,12 +95,12 @@ export default async function ProductDetailPage({
           ) : null}
 
           <ProductPurchasePanel
+            key={product._id}
             productId={product._id}
             variants={variants}
             productAttributes={product.attributes ?? []}
             orderSettings={orderSettings}
           />
-          <WishlistButton productId={product._id} />
         </div>
       </div>
 

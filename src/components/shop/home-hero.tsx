@@ -1,12 +1,36 @@
 'use client';
 
 import type { HomeHeroSettings } from '@/types';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 type Props = {
   hero: HomeHeroSettings;
 };
+
+const SLIDE_INTERVAL_MS = 5000;
+const SLIDE_DURATION_S = SLIDE_INTERVAL_MS / 1000;
+const CROSSFADE_DURATION_S = 0.9;
+
+function kenBurnsMotion(slideIndex: number, reduceMotion: boolean) {
+  if (reduceMotion) {
+    return {
+      initial: { scale: 1, x: '0%', y: '0%' },
+      animate: { scale: 1, x: '0%', y: '0%' },
+    };
+  }
+
+  const animate =
+    slideIndex % 2 === 0
+      ? { scale: 1.1, x: '-2%', y: '-1.5%' }
+      : { scale: 1.1, x: '2%', y: '1.5%' };
+
+  return {
+    initial: { scale: 1, x: '0%', y: '0%' },
+    animate,
+  };
+}
 
 function SlideImage({
   src,
@@ -21,7 +45,11 @@ function SlideImage({
 }) {
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} className={`h-full w-full object-cover ${className ?? ''}`} />
+    <img
+      src={src}
+      alt={alt}
+      className={`h-full w-full object-cover ${className ?? ''}`}
+    />
   );
 
   if (href) {
@@ -34,6 +62,46 @@ function SlideImage({
   return img;
 }
 
+function KenBurnsSlide({
+  src,
+  alt,
+  href,
+  slideIndex,
+}: {
+  src: string;
+  alt: string;
+  href?: string | null;
+  slideIndex: number;
+}) {
+  const reduceMotion = useReducedMotion() ?? false;
+  const { initial, animate } = kenBurnsMotion(slideIndex, reduceMotion);
+
+  return (
+    <motion.div
+      className="absolute inset-0 overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{
+        opacity: { duration: CROSSFADE_DURATION_S, ease: 'easeInOut' },
+      }}
+    >
+      <motion.div
+        className="h-full w-full origin-center"
+        initial={initial}
+        animate={animate}
+        transition={{
+          scale: { duration: SLIDE_DURATION_S, ease: [0.42, 0, 0.58, 1] },
+          x: { duration: SLIDE_DURATION_S, ease: [0.42, 0, 0.58, 1] },
+          y: { duration: SLIDE_DURATION_S, ease: [0.42, 0, 0.58, 1] },
+        }}
+      >
+        <SlideImage src={src} alt={alt} href={href} className="rounded-none" />
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function HeroSlider({ slides }: { slides: HomeHeroSettings['slides'] }) {
   const [index, setIndex] = useState(0);
   const validSlides = slides.filter((s) => s.image?.url);
@@ -42,13 +110,13 @@ function HeroSlider({ slides }: { slides: HomeHeroSettings['slides'] }) {
     if (validSlides.length <= 1) return;
     const timer = setInterval(() => {
       setIndex((i) => (i + 1) % validSlides.length);
-    }, 5000);
+    }, SLIDE_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [validSlides.length]);
 
   if (!validSlides.length) {
     return (
-      <div className="flex h-full min-h-[280px] items-center justify-center rounded-2xl bg-zinc-100 text-sm text-zinc-500">
+      <div className="flex h-full min-h-[280px] items-center justify-center bg-zinc-100 text-sm text-zinc-500">
         No slider images configured
       </div>
     );
@@ -58,13 +126,16 @@ function HeroSlider({ slides }: { slides: HomeHeroSettings['slides'] }) {
   const href = current.product?.slug ? `/products/${current.product.slug}` : null;
 
   return (
-    <div className="relative h-full min-h-[280px] overflow-hidden rounded-2xl bg-zinc-100">
-      <SlideImage
-        src={current.image!.url}
-        alt={current.product?.title ?? 'Hero slide'}
-        href={href}
-        className="absolute inset-0"
-      />
+    <div className="relative h-full min-h-[280px] overflow-hidden bg-zinc-100">
+      <AnimatePresence initial={false} mode="sync">
+        <KenBurnsSlide
+          key={`${index}-${current.image!.url}`}
+          slideIndex={index}
+          src={current.image!.url}
+          alt={current.product?.title ?? 'Hero slide'}
+          href={href}
+        />
+      </AnimatePresence>
 
       {validSlides.length > 1 ? (
         <>
@@ -72,7 +143,7 @@ function HeroSlider({ slides }: { slides: HomeHeroSettings['slides'] }) {
             type="button"
             aria-label="Previous slide"
             onClick={() => setIndex((i) => (i - 1 + validSlides.length) % validSlides.length)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 px-3 py-2 text-white hover:bg-black/60"
+            className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/40 px-3 py-2 text-white hover:bg-black/60"
           >
             ‹
           </button>
@@ -80,11 +151,11 @@ function HeroSlider({ slides }: { slides: HomeHeroSettings['slides'] }) {
             type="button"
             aria-label="Next slide"
             onClick={() => setIndex((i) => (i + 1) % validSlides.length)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 px-3 py-2 text-white hover:bg-black/60"
+            className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/40 px-3 py-2 text-white hover:bg-black/60"
           >
             ›
           </button>
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
+          <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-2">
             {validSlides.map((_, i) => (
               <button
                 key={i}
@@ -105,7 +176,7 @@ function SidePanel({ items }: { items: HomeHeroSettings['sideItems'] }) {
   const valid = items.filter((item) => item.image?.url && item.product?.slug);
   if (!valid.length) {
     return (
-      <div className="flex h-full min-h-[280px] items-center justify-center rounded-2xl bg-zinc-100 text-sm text-zinc-500">
+      <div className="flex h-full min-h-[280px] items-center justify-center bg-zinc-100 text-sm text-zinc-500">
         No side products configured
       </div>
     );
@@ -116,13 +187,13 @@ function SidePanel({ items }: { items: HomeHeroSettings['sideItems'] }) {
     return (
       <Link
         href={`/products/${item.product!.slug}`}
-        className="block h-full min-h-[280px] overflow-hidden rounded-2xl"
+        className="block h-full min-h-[280px] overflow-hidden"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={item.image!.url}
           alt={item.product!.title}
-          className="h-full w-full object-cover transition hover:scale-[1.02]"
+          className="h-full w-full rounded-none object-cover transition hover:scale-[1.02]"
         />
       </Link>
     );
@@ -134,13 +205,13 @@ function SidePanel({ items }: { items: HomeHeroSettings['sideItems'] }) {
         <Link
           key={item.product!._id}
           href={`/products/${item.product!.slug}`}
-          className="block overflow-hidden rounded-2xl"
+          className="block overflow-hidden"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.image!.url}
             alt={item.product!.title}
-            className="h-full w-full object-cover transition hover:scale-[1.02]"
+            className="h-full w-full rounded-none object-cover transition hover:scale-[1.02]"
           />
         </Link>
       ))}
