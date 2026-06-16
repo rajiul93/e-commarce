@@ -130,13 +130,13 @@ export function ShopHeader({ initialBranding }: ShopHeaderProps) {
             <>
               <Link
                 href="/login"
-                className="rounded-full px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+                className="hidden rounded-full px-3 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 sm:inline"
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="hidden rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:inline"
               >
                 Sign up
               </Link>
