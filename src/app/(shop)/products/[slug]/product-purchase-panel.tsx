@@ -71,7 +71,8 @@ export function ProductPurchasePanel({
 
   const selectedVariant = findVariantBySelection(activeVariants, selection);
   const allAxesSelected = axes.every((axis) => selection[axis.name]);
-  const outOfStock = !selectedVariant || selectedVariant.stock < 1;
+  const outOfStock =
+    allAxesSelected && selectedVariant != null && selectedVariant.stock < 1;
   const cartLine = selectedVariant
     ? findCartLine(cart, productId, selectedVariant._id)
     : undefined;
